@@ -10,7 +10,7 @@ import numpy as np
 from torchvision import datasets, transforms
 import torch
 
-from utils.sampling import mnist_iid, mnist_noniid, cifar_iid
+from utils.sampling import mnist_iid, mnist_noniid, cifar_iid, cifar_noniid, fminist_iid, fminist_noniid
 from utils.options import args_parser
 from models.Update import LocalUpdate
 from models.Nets import MLP, CNNMnist, CNNCifar
@@ -40,7 +40,16 @@ if __name__ == '__main__':
         if args.iid:
             dict_users = cifar_iid(dataset_train, args.num_users)
         else:
-            exit('Error: only consider IID setting in CIFAR10')
+            dict_users = cifar_noniid(dataset_train, args.num_users)
+            #exit('Error: only consider IID setting in CIFAR10')
+    elif args.dataset == 'fashion_minist' or args.dataset == 'fashion':
+        trans_fashion = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+        dataset_train = datasets.FashionMNIST('../data/fashion_mnist', train=True, download=True, transform=trans_fashion)
+        dataset_test =  datasets.FashionMNIST('../data/fashion_mnist', train=False, download=True, transform=trans_fashion)
+        if args.iid:
+            dict_users = fminist_iid(dataset_train, args.num_users)
+        else:
+            dict_users = fminist_noniid(dataset_train, args.num_users)
     else:
         exit('Error: unrecognized dataset')
     img_size = dataset_train[0][0].shape
@@ -48,7 +57,7 @@ if __name__ == '__main__':
     # build model
     if args.model == 'cnn' and args.dataset == 'cifar':
         net_glob = CNNCifar(args=args).to(args.device)
-    elif args.model == 'cnn' and args.dataset == 'mnist':
+    elif args.model == 'cnn' and (args.dataset == 'mnist' or args.dataset == 'fashion_minist'):
         net_glob = CNNMnist(args=args).to(args.device)
     elif args.model == 'mlp':
         len_in = 1
